@@ -2,23 +2,26 @@ import pygame
 from constants import *
 
 class Bird(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, random_x, random_y, color, initial_x = 150):
         pygame.sprite.Sprite.__init__(self)
+
+        self.random_x = random_x
+        self.random_y = random_y
 
         self.speed = SPEED
 
         self.images = [
-            pygame.image.load("images/bluebird-upflap.png").convert_alpha(),
-            pygame.image.load("images/bluebird-midflap.png").convert_alpha(),
-            pygame.image.load("images/bluebird-downflap.png").convert_alpha()
+            pygame.image.load(f"images/{color}-bird-upflap.png").convert_alpha(),
+            pygame.image.load(f"images/{color}-bird-midflap.png").convert_alpha(),
+            pygame.image.load(f"images/{color}-bird-downflap.png").convert_alpha()
         ]
 
         self.current_image = 0
         
-        self.image = pygame.image.load("images/bluebird-midflap.png").convert_alpha()
+        self.image = pygame.image.load(f"images/{color}-bird-midflap.png").convert_alpha()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect[0] = SCREEN[0] / 2
+        self.rect[0] = (SCREEN[0] / 2) - initial_x
         self.rect[1] = SCREEN[1] / 2
 
 
@@ -33,3 +36,12 @@ class Bird(pygame.sprite.Sprite):
 
     def bump(self):
         self.speed = -SPEED
+
+    def calc_distance(self, target_x, target_y):
+        return (target_x, target_y)
+
+    def neuronio(self, x, y):
+        calc = (self.random_x * x) + (self.random_y * y)
+
+        if calc > 0:
+            self.bump()

@@ -22,3 +22,9 @@ class Pipe(pygame.sprite.Sprite):
         
     def update(self):
         self.rect[0] -= GAME_SPEED
+
+    def get_x(self):
+        return self.rect[0]
+
+    def get_y(self):
+        return self.rect[1]
