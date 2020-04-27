@@ -6,7 +6,7 @@ class Pipe(pygame.sprite.Sprite):
     def __init__(self, inverted, x, y):
         pygame.sprite.Sprite.__init__(self)
 
-        self.image = pygame.image.load("images/pipe-red.png").convert_alpha()
+        self.image = pygame.image.load("images/pipe-green.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, PIPE)
 
         self.rect = self.image.get_rect()
