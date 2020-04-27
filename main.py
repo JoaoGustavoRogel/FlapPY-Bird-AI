@@ -2,6 +2,7 @@ import neat
 import time
 import pygame
 import random
+import threading
 from bird import Bird
 from pipe import Pipe
 from constants import *
@@ -135,10 +136,27 @@ def eval_genomes(genomes, config):
 
         pygame.display.update()
 
+def play_song():
+    pygame.mixer.music.load('songs/main_song.mp3')
+    pygame.mixer.music.play()
+    pygame.mixer.music.set_volume(1)
+
+    clock = pygame.time.Clock()
+    clock.tick(10)
+
+    while pygame.mixer.music.get_busy():
+        print("Tocando música")
+        pygame.event.poll()
+        clock.tick(10)
+
 def run():
     config_file = "config.txt"
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_file)
     p = neat.Population(config)
+    
+    t = threading.Thread(target=play_song)
+    t.start()
+
     p.run(eval_genomes, 100)
 
 
