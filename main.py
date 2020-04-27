@@ -1,3 +1,5 @@
+import neat
+import time
 import pygame
 import random
 from bird import Bird
@@ -5,6 +7,7 @@ from pipe import Pipe
 from constants import *
 from ground import Ground
 from pygame.locals import *
+from problem import Problem
 
 
 def init():
@@ -28,19 +31,25 @@ def generate_inital_population(size):
     birds = []
     color = 1
     for _ in range(size):
-        print(color)
-        birds.append(Bird(random.randint(-10, 10), random.randint(-10, -10), color, random.randint(50, 150)))
+        birds.append(Bird(random.randint(-5, 5), random.randint(-5, 5), color, random.randint(50, 150)))
         color %= 3
         color += 1
 
     return birds
 
-if __name__ == "__main__":
-    screen = init()
-
+def eval_genomes(genomes, config):
+    nets = []
     bird_group = pygame.sprite.Group()
-    for bird in generate_inital_population(6):
-        bird_group.add(bird)
+    birds = []
+    ge = []
+
+    for genome_id, genome in genomes:
+        genome.fitness = 0
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+        nets.append(net)
+        birds.append(Bird(random.randint(1, 3)))
+        ge.append(genome)
+
     
     ground_group = pygame.sprite.Group()
     ground_group.add(Ground(2 * SCREEN[0], 100, 0))
@@ -53,18 +62,15 @@ if __name__ == "__main__":
     pipe_group.add(get_random_pipes(600 + SCREEN[0])[1])
 
     clock = pygame.time.Clock()
-    score = 0
 
-    while 42:
-        clock.tick(30)
-        score += 1
+    bird_life = True
+    while bird_life and len(birds) > 0:
+        clock.tick(25)
+        
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
 
-            if event.type == KEYDOWN:
-                if event.key == K_SPACE:
-                    bird.bump()
         screen.blit(BACKGROUND, (0, 0))
 
         if is_out_screen(ground_group.sprites()[0]):
@@ -80,11 +86,41 @@ if __name__ == "__main__":
             pipe_group.add(pipes[0])
             pipe_group.add(pipes[1])
 
-        pipe_x = pipe_group.sprites()[0].get_x()
-        pipe_y = pipe_group.sprites()[0].get_y()
+        for i, bird in enumerate(birds):
+            ge[i].fitness += 0.1
+            by = bird.rect[1]
+            py = pipe_group.sprites()[0].rect[1]
 
-        bird_group.sprites()[0].neuronio(pipe_x, pipe_y)           
+            output = nets[birds.index(bird)].activate((by, abs(by - py), abs(by - py + PIPE_GAP)))
+            if output[0] > 0.5:
+                bird.bump()
+            
+        bird_group = pygame.sprite.Group()
+        for bird in birds:
+            bird_group.add(bird)
 
+        cont_died = 0
+        for bird in birds:
+            flag = True
+            if bird.is_collided_with(pipe_group.sprites()[0]) or bird.is_collided_with(pipe_group.sprites()[1]) or bird.is_collided_with(ground_group.sprites()[0]):
+                bird.die()
+                ge[birds.index(bird)].fitness -= 1
+                nets.pop(birds.index(bird))
+                ge.pop(birds.index(bird))
+                birds.pop(birds.index(bird))
+                flag = False
+
+            if flag and (bird.rect[1] > ground_group.sprites()[0].rect[1] or bird.rect[1] > SCREEN[1]):
+                bird.die()
+                bird.die()
+                ge[birds.index(bird)].fitness -= 1
+                nets.pop(birds.index(bird))
+                ge.pop(birds.index(bird))
+                birds.pop(birds.index(bird))
+
+            if not bird.is_life:
+                cont_died += 1
+      
         bird_group.update()
         ground_group.update()
         pipe_group.update()
@@ -93,11 +129,21 @@ if __name__ == "__main__":
         ground_group.draw(screen)
         bird_group.draw(screen)
         
-        print("Pipe Y", pipe_group.sprites()[0].get_y())
-        # print("Score:", score)
-        # print("Bird Distance:", bird.calc_distance(pipe_group.sprites()[0].get_x()))
-        if pygame.sprite.groupcollide(bird_group, ground_group, False, pygame.sprite.collide_mask) or pygame.sprite.groupcollide(bird_group, pipe_group, False, pygame.sprite.collide_mask):
-            break
         
+        if cont_died == len(bird_group):
+            bird_life = False
+
         pygame.display.update()
+
+def run():
+    config_file = "config.txt"
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_file)
+    p = neat.Population(config)
+    p.run(eval_genomes, 100)
+
+
+if __name__ == "__main__":
+    screen = init()
+
+    run()
         

@@ -2,11 +2,11 @@ import pygame
 from constants import *
 
 class Bird(pygame.sprite.Sprite):
-    def __init__(self, random_x, random_y, color, initial_x = 150):
+    def __init__(self, color, initial_x = 150):
         pygame.sprite.Sprite.__init__(self)
 
-        self.random_x = random_x
-        self.random_y = random_y
+        self.is_life = True
+        self.score = 0
 
         self.speed = SPEED
 
@@ -37,11 +37,15 @@ class Bird(pygame.sprite.Sprite):
     def bump(self):
         self.speed = -SPEED
 
+    def die(self):
+        self.is_life = False
+
+    def update_score(self):
+        if self.is_life:
+            self.score += 0.1
+
     def calc_distance(self, target_x, target_y):
         return (target_x, target_y)
 
-    def neuronio(self, x, y):
-        calc = (self.random_x * x) + (self.random_y * y)
-
-        if calc > 0:
-            self.bump()
+    def is_collided_with(self, sprite):
+        return self.rect.colliderect(sprite.rect)
